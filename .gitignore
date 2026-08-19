@@ -40,9 +40,9 @@ htmlcov/
 *.parquet
 *.pkl
 *.joblib
-data/
-models/
-chroma/
+/data/
+/models/
+/chroma/
 
 # Секреты и конфиги с токенами
 .env
