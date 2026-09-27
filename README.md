@@ -56,8 +56,8 @@ python -m ai_recruiter.main --vacancy data/vacancies/vacancy_01.json --top-k 5
 # 4. Тесты
 pytest tests/
 
-# 5. Метрики ранжирования и итоговый отчёт (HTML + PDF)
-python -m ai_recruiter.report.final_report --out-pdf data/final_report.pdf
+# 5. Метрики ранжирования и итоговый отчёт (HTML + PDF + MD в reports/)
+python -m ai_recruiter.report.final_report
 
 # 6. Streamlit-демо (опционально)
 pip install -r requirements-demo.txt

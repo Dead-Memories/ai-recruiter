@@ -31,6 +31,9 @@ class Config:
     chroma_dir: Path = field(
         default_factory=lambda: PROJECT_ROOT / "chroma"
     )
+    reports_dir: Path = field(
+        default_factory=lambda: PROJECT_ROOT / "reports"
+    )
 
     # --- Воспроизводимость ---
     seed: int = 42

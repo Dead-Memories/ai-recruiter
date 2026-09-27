@@ -1,10 +1,11 @@
-"""Итоговый отчёт проекта: метрики + примеры карточек (HTML и PDF).
+"""Итоговый отчёт проекта: метрики + полная выдача по вакансиям (HTML/PDF/MD).
 
 Запуск:
     python -m ai_recruiter.report.final_report
 
 Считает метрики ранжирования (MRR / Hit@k / Precision@k) на демо-данных и
-сохраняет отчёт в HTML (всегда) и PDF (если найден TTF-шрифт с кириллицей).
+сохраняет в reports/: сводный HTML, PDF (если найден TTF-шрифт с кириллицей)
+и Markdown-транскрипт реального прогона по всем вакансиям.
 """
 
 from __future__ import annotations
@@ -16,8 +17,8 @@ from ai_recruiter.config import config
 from ai_recruiter.embeddings import build_index, load_manifest
 from ai_recruiter.evaluation import evaluate
 from ai_recruiter.pipeline import run_pipeline
-from ai_recruiter.report import render_html
-from ai_recruiter.schema import Vacancy
+from ai_recruiter.report import render_html, render_markdown
+from ai_recruiter.schema import CandidateReport, Vacancy
 
 
 def load_all_vacancies(vacancies_dir: str | Path | None = None) -> list[Vacancy]:
@@ -90,13 +91,44 @@ th {{ background: #f4f4f4; }}
 </body></html>"""
 
 
+def build_run_output_md(
+    vacancies: list[Vacancy],
+    store,
+    manifest: list[dict],
+    top_k: int,
+) -> str:
+    """Полный транскрипт прогона: ранжированная выдача по каждой вакансии."""
+    lines = [
+        "# AI-Recruiter — реальный прогон пайплайна",
+        "",
+        f"Вакансий: {len(vacancies)}, кандидатов в базе: {len(manifest)}, "
+        f"выдача: топ-{top_k} на вакансию.",
+        "",
+    ]
+    for vacancy in vacancies:
+        reports = run_pipeline(vacancy, top_k=top_k, store=store, manifest=manifest)
+        lines.append(f"## Вакансия: {vacancy.title}")
+        lines.append(f"Целевая роль: {vacancy.role or '—'} | грейд: {vacancy.seniority}")
+        lines.append("")
+        for i, report in enumerate(reports, start=1):
+            lines.append(f"### {i}. {report.full_name} — {report.score}% ({report.verdict})")
+            lines.append("")
+            card = render_markdown(report).strip()
+            body = "\n".join(card.split("\n")[1:]).strip()
+            lines.append(body)
+            lines.append("")
+    return "\n".join(lines).strip() + "\n"
+
+
 def generate_final_report(
     vacancies: list[Vacancy] | None = None,
     top_k: int = 5,
     out_html: str | Path | None = None,
     out_pdf: str | Path | None = None,
+    out_md: str | Path | None = None,
 ) -> dict:
-    """Генерирует итоговый отчёт (HTML + PDF) и возвращает пути и метрики."""
+    """Генерирует итоговый отчёт (HTML + PDF + MD) и возвращает пути и метрики."""
+    config.reports_dir.mkdir(parents=True, exist_ok=True)
     vacancies = vacancies if vacancies is not None else load_all_vacancies()
     manifest = load_manifest()
     store = build_index(manifest=manifest)
@@ -110,15 +142,20 @@ def generate_final_report(
             sample_cards.append(render_html(report))
 
     html = build_html_report(vacancies, result, sample_cards)
+    md = build_run_output_md(vacancies, store, manifest, top_k)
 
-    out_html = Path(out_html or config.data_dir / "final_report.html")
+    out_html = Path(out_html or config.reports_dir / "final_report.html")
+    out_md = Path(out_md or config.reports_dir / "run_output.md")
     out_html.write_text(html, encoding="utf-8")
+    out_md.write_text(md, encoding="utf-8")
 
-    paths = {"html": str(out_html), "pdf": None}
-    if out_pdf:
-        pdf_path = Path(out_pdf)
+    paths = {"html": str(out_html), "md": str(out_md), "pdf": None}
+    pdf_path = Path(out_pdf or config.reports_dir / "final_report.pdf")
+    try:
         _render_pdf(html, vacancies, result, pdf_path)
         paths["pdf"] = str(pdf_path)
+    except RuntimeError as exc:
+        print(f"[skip] PDF: {exc}")
 
     return {"paths": paths, "metrics": result.to_dict()}
 
@@ -173,12 +210,14 @@ def main() -> None:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--out-html", type=str, default=None)
     parser.add_argument("--out-pdf", type=str, default=None)
+    parser.add_argument("--out-md", type=str, default=None)
     args = parser.parse_args()
 
     report = generate_final_report(
         top_k=args.top_k,
         out_html=args.out_html,
         out_pdf=args.out_pdf,
+        out_md=args.out_md,
     )
     print("Отчёт:", report["paths"])
     print("Метрики:", json.dumps(report["metrics"], ensure_ascii=False, indent=2))

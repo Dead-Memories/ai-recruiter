@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<title>AI-Recruiter — итоговый отчёт</title>
+<style>
+body { font-family: -apple-system, Segoe UI, sans-serif; margin: 32px; color: #222; }
+h1, h2 { border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+table { border-collapse: collapse; margin: 12px 0; }
+td, th { border: 1px solid #ccc; padding: 6px 12px; text-align: left; }
+th { background: #f4f4f4; }
+.metrics td:first-child { font-weight: bold; }
+.card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin: 12px 0; }
+</style></head><body>
+<h1>AI-Recruiter — итоговый отчёт</h1>
+<p>Мультиагентная система семантического ранжирования и скоринга кандидатов.</p>
+
+<h2>Метрики ранжирования</h2>
+<p>Оценка на демо-данных (5 вакансий)
+с известным ground-truth (роль кандидата в манифесте).</p>
+<table class="metrics">
+<tr><th>Метрика</th><th>Значение</th></tr>
+<tr><td>MRR</td><td><b>0.900</b></td></tr><tr><td>Hit@1</td><td><b>0.800</b></td></tr><tr><td>Hit@3</td><td><b>1.000</b></td></tr><tr><td>Hit@5</td><td><b>1.000</b></td></tr><tr><td>Precision@5</td><td><b>0.760</b></td></tr>
+</table>
+
+<h2>Разбивка по вакансиям</h2>
+<table>
+<tr><th>Вакансия</th><th>Целевая роль</th><th>MRR</th><th>Топ-3 роли в выдаче</th></tr>
+<tr><td>Backend-разработчик Python (Middle+)</td><td>Backend-разработчик (Python)</td><td>1.000</td><td>Backend-разработчик (Python), Backend-разработчик (Python), Backend-разработчик (Python)</td></tr><tr><td>Senior DevOps-инженер</td><td>DevOps-инженер</td><td>1.000</td><td>DevOps-инженер, DevOps-инженер, DevOps-инженер</td></tr><tr><td>QA Automation Engineer (Java/Python)</td><td>QA-инженер</td><td>1.000</td><td>QA-инженер, Backend-разработчик (Python), Frontend-разработчик (React)</td></tr><tr><td>ML-инженер (NLP/LLM)</td><td>ML-инженер</td><td>1.000</td><td>ML-инженер, ML-инженер, ML-инженер</td></tr><tr><td>Data Analyst (Junior+)</td><td>Data Analyst</td><td>0.500</td><td>Backend-разработчик (Python), Data Analyst, Data Analyst</td></tr>
+</table>
+
+<h2>Примеры карточек кандидатов</h2>
+<div class="card" style="border:1px solid #ccc;border-radius:8px;padding:16px;margin:12px 0;font-family:sans-serif;"><h2>Соловьёв Дмитрий Сергеевич — 84.9% (Рекомендован)</h2><p><b>Роль:</b> Backend-разработчик (Python) (middle)<br><b>Опыт:</b> 4.5 лет<br><b>Тех:</b> 82.5 | <b>HR:</b> 88.0 | <b>Семантика:</b> 86.2</p><h3>Плюсы</h3><ul><li>Обязательные навыки покрыты: Python, PostgreSQL, Docker</li><li>Есть желательные навыки: Kubernetes, Kafka, gRPC</li><li>Опыт 4.0 лет соответствует грейду</li><li>Стабильная карьера: в среднем 2.2 г/место</li></ul><h3>Минусы</h3><ul><li>Нет обязательных навыков: FastAPI</li></ul><h3>Риски</h3><ul><li>Ключевые технологии отсутствуют в резюме</li></ul></div><div class="card" style="border:1px solid #ccc;border-radius:8px;padding:16px;margin:12px 0;font-family:sans-serif;"><h2>Кузнецов Тимофей Петрович — 88.1% (Рекомендован)</h2><p><b>Роль:</b> DevOps-инженер (senior)<br><b>Опыт:</b> 10.6 лет<br><b>Тех:</b> 85.2 | <b>HR:</b> 100.0 | <b>Семантика:</b> 77.3</p><h3>Плюсы</h3><ul><li>Обязательные навыки покрыты: Docker, Kubernetes, Terraform, CI/CD</li><li>Есть желательные навыки: AWS, Grafana, Helm</li><li>Опыт 11.0 лет соответствует грейду</li><li>Стабильная карьера: в среднем 3.5 г/место</li><li>Уверенный английский (B2+)</li><li>Опыт подтверждает senior-грейд</li></ul><h3>Минусы</h3><ul><li>Нет обязательных навыков: Linux</li></ul><h3>Риски</h3><ul><li>Ключевые технологии отсутствуют в резюме</li></ul></div>
+</body></html>
