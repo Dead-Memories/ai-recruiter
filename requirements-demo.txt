@@ -1,0 +1,3 @@
+# Дополнительные зависимости для Streamlit-демо (app.py).
+# Устанавливаются поверх requirements.txt: pip install -r requirements-demo.txt
+streamlit>=1.36

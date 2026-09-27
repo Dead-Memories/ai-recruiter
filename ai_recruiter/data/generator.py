@@ -22,9 +22,12 @@ from ai_recruiter.config import config
 # Словари данных
 # --------------------------------------------------------------------------- #
 
-FIRST_NAMES = [
+MALE_NAMES = [
     "Александр", "Дмитрий", "Иван", "Михаил", "Артём", "Никита", "Егор",
     "Максим", "Павел", "Сергей", "Андрей", "Владимир", "Тимофей", "Кирилл",
+]
+
+FEMALE_NAMES = [
     "Анна", "Мария", "Елена", "Ольга", "Наталья", "Дарья", "Екатерина",
     "Виктория", "Алина", "Полина", "Ксения", "Ирина", "Светлана", "Юлия",
 ]
@@ -262,7 +265,7 @@ def generate_candidate(rng: random.Random, idx: int) -> Candidate:
 
     # Имя с согласованием по роду (женская фамилия заканчивается на -а)
     gender = rng.choice(["m", "f"])
-    first = rng.choice(FIRST_NAMES)
+    first = rng.choice(MALE_NAMES if gender == "m" else FEMALE_NAMES)
     if gender == "m":
         last = rng.choice([n for n in LAST_NAMES if not n.endswith("а")])
         patr = rng.choice([p for p in PATRONYMICS if p.endswith("ич")])

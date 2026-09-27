@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+cvs
+data/resumes
+data/vacancies
+data/candidates_manifest.json
+data/final_report.html
+data/final_report.pdf
+chroma

@@ -34,11 +34,60 @@ Python, sentence-transformers (эмбеддинги), ChromaDB (векторны
 
 ## Статус
 
-В разработке. Подробный план — в Task3_plan.md.
-
-Сделано: генератор демо-резюме, парсинг (PDF/DOCX/ODT/TXT), чанкинг по секциям.
-В очереди: эмбеддинги + ChromaDB, тулы, агенты, отчёт, тесты и demo-notebook.
+Готов сквозной прототип: генератор демо-резюме, парсинг (PDF/DOCX/ODT/TXT),
+чанкинг по секциям, эмбеддинги + векторный поиск (ChromaDB с in-memory
+fallback), тулы, LLM-агенты (с rule-based fallback без LLM), отчёт и
+сквозной пайплайн. Подробный план — в Task3_plan.md.
 
 ## Запуск
 
-Будет добавлен по мере реализации.
+```bash
+# 1. Создать окружение и поставить зависимости
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Сгенерировать демо-данные (резюме + манифест) и тестовые вакансии
+python -m ai_recruiter.data.generator --n 100
+python -m ai_recruiter.data.vacancies
+
+# 3. Запустить пайплайн на тестовой вакансии
+python -m ai_recruiter.main --vacancy data/vacancies/vacancy_01.json --top-k 5
+
+# 4. Тесты
+pytest tests/
+
+# 5. Метрики ранжирования и итоговый отчёт (HTML + PDF)
+python -m ai_recruiter.report.final_report --out-pdf data/final_report.pdf
+
+# 6. Streamlit-демо (опционально)
+pip install -r requirements-demo.txt
+streamlit run app.py
+
+# 7. Docker (опционально)
+docker build -t ai-recruiter . && docker run -p 8501:8501 ai-recruiter
+```
+
+### Fallback без тяжёлых зависимостей
+
+Модули эмбеддингов и агентов работают даже без `sentence-transformers`,
+`chromadb` и локального LLM:
+
+- если нет `sentence-transformers`/`chromadb`, используется
+  детерминированный хэшинг-эмбеддер и in-memory векторное хранилище;
+- если LLM недоступна (нет Ollama-сервера или ключа OpenAI), агенты
+  переключаются на rule-based скоринг на основе тулов.
+
+Для реального качества эмбеддингов и LLM-объяснений поставьте
+`sentence-transformers`, `chromadb` и поднимите Ollama
+(`qwen2.5:14b`) либо задайте `OPENAI_API_KEY` и переключите
+`llm_provider` в `ai_recruiter/config.py`.
+
+### Демо-ноутбук
+
+См. `demo.ipynb` — пошаговый прогон «генерация → индексация → ранжирование».
+
+### Метрики качества
+
+Модуль `ai_recruiter/evaluation.py` оценивает ранжирование на ground-truth
+(роль кандидата известна из манифеста): MRR, Hit@1/3/5, Precision@5.
+Сводный отчёт — `python -m ai_recruiter.report.final_report`.
