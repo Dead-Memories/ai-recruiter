@@ -34,6 +34,79 @@ def _esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+# Текстовые блоки отчёта: (тип, текст). Типы: h2 / p / li.
+_INTRO_BLOCKS: list[tuple[str, str]] = [
+    ("h2", "1. Постановка задачи"),
+    (
+        "p",
+        "Классический поиск по ключевым словам не понимает контекста и синонимов: "
+        "кандидат, написавший «разрабатывал архитектуру распределённых систем на Go», "
+        "может не попасть в выдачу по жёсткому тегу «Backend Engineer». Рекрутеру нужен "
+        "не просто отсортированный список, а текстовое обоснование, почему конкретный "
+        "человек подходит под сложные требования вакансии.",
+    ),
+    (
+        "p",
+        "Цель — мультиагентная система: загружаем вакансию → векторный поиск отбирает "
+        "топ-N кандидатов из базы резюме → команда LLM-агентов (Технический Скринер и "
+        "HR-Аналитик) проводит построчный аудит → генерируется карточка с процентом "
+        "соответствия, плюсами/минусами/рисками и вердиктом «Рекомендован / В резерв / Отказ».",
+    ),
+    ("h2", "2. Описание решения"),
+    ("p", "Конвейер состоит из модулей:"),
+    ("li", "Парсинг (parsing) — извлечение текста из PDF/DOCX/ODT/TXT."),
+    ("li", "Чанкинг (chunking) — нарезка резюме по секциям (опыт, навыки, образование и др.)."),
+    ("li", "Эмбеддинги и векторный поиск (embeddings) — индексация чанков в ChromaDB с fallback на in-memory хранилище."),
+    ("li", "Тулы (tools) — semantic_search, rank_candidates, extract_experience_years, check_mandatory_skills, get_resume_chunks."),
+    ("li", "Агенты (agents) — Технический Скринер (стек и хард-скиллы) и HR-Аналитик (карьерная динамика, red flags); fallback — rule-based скоринг без LLM."),
+    ("li", "Отчёт (report) — агрегация взвешенного скора, вердикт, карточка в Markdown/HTML."),
+    (
+        "p",
+        "Эмбеддинги — sentence-transformers (intfloat/multilingual-e5-large) с префиксами e5; "
+        "при отсутствии модели используется детерминированный хэшинг-эмбеддер на n-граммах. "
+        "LLM — Ollama или OpenAI-совместимый API с переключением на rule-based fallback.",
+    ),
+]
+
+_CONCLUSIONS_BLOCKS: list[tuple[str, str]] = [
+    ("h2", "4. Выводы"),
+    (
+        "p",
+        "На демо-данных (100 синтетических резюме, 5 вакансий) семантический поиск стабильно "
+        "поднимает релевантных кандидатов наверх: MRR ≈ 0.9, Hit@3 = 1.0. Это подтверждает, "
+        "что даже лексический fallback-эмбеддер даёт осмысленное ранжирование, а с полноценной "
+        "эмбеддинг-моделью результат должен ещё улучшиться.",
+    ),
+    (
+        "p",
+        "Ограничения: метрики посчитаны на синтетических данных с известной ролью кандидата; "
+        "агенты работают в rule-based режиме (LLM не вызывался). Дальнейшие шаги — подключить "
+        "sentence-transformers + ChromaDB, реальный LLM для генерации объяснений и расширить демо-базу.",
+    ),
+]
+
+
+def _blocks_to_html(blocks: list[tuple[str, str]]) -> str:
+    """Рендер текстовых блоков в HTML."""
+    out: list[str] = []
+    i = 0
+    while i < len(blocks):
+        kind, text = blocks[i]
+        if kind == "h2":
+            out.append(f"<h2>{_esc(text)}</h2>")
+            i += 1
+        elif kind == "p":
+            out.append(f"<p>{_esc(text)}</p>")
+            i += 1
+        else:  # li — группируем подряд идущие пункты в <ul>
+            items: list[str] = []
+            while i < len(blocks) and blocks[i][0] == "li":
+                items.append(f"<li>{_esc(blocks[i][1])}</li>")
+                i += 1
+            out.append("<ul>" + "".join(items) + "</ul>")
+    return "\n".join(out)
+
+
 def _metrics_table(result) -> str:
     rows = (
         ("MRR", f"{result.mrr:.3f}"),
@@ -72,7 +145,9 @@ th {{ background: #f4f4f4; }}
 <h1>AI-Recruiter — итоговый отчёт</h1>
 <p>Мультиагентная система семантического ранжирования и скоринга кандидатов.</p>
 
-<h2>Метрики ранжирования</h2>
+{_blocks_to_html(_INTRO_BLOCKS)}
+
+<h2>3. Результаты экспериментов</h2>
 <p>Оценка на демо-данных ({len(result.per_vacancy)} вакансий)
 с известным ground-truth (роль кандидата в манифесте).</p>
 <table class="metrics">
@@ -80,14 +155,16 @@ th {{ background: #f4f4f4; }}
 {_metrics_table(result)}
 </table>
 
-<h2>Разбивка по вакансиям</h2>
+<h3>Разбивка по вакансиям</h3>
 <table>
 <tr><th>Вакансия</th><th>Целевая роль</th><th>MRR</th><th>Топ-3 роли в выдаче</th></tr>
 {_vacancy_rows(result.per_vacancy)}
 </table>
 
-<h2>Примеры карточек кандидатов</h2>
+<h3>Примеры карточек кандидатов</h3>
 {''.join(sample_cards)}
+
+{_blocks_to_html(_CONCLUSIONS_BLOCKS)}
 </body></html>"""
 
 
@@ -160,6 +237,27 @@ def generate_final_report(
     return {"paths": paths, "metrics": result.to_dict()}
 
 
+def _blocks_to_pdf(blocks: list[tuple[str, str]], normal, sub) -> list:
+    """Рендер текстовых блоков в элементы reportlab."""
+    from reportlab.platypus import Paragraph
+
+    story: list = []
+    i = 0
+    while i < len(blocks):
+        kind, text = blocks[i]
+        if kind == "h2":
+            story.append(Paragraph(text, sub))
+            i += 1
+        elif kind == "p":
+            story.append(Paragraph(text, normal))
+            i += 1
+        else:
+            while i < len(blocks) and blocks[i][0] == "li":
+                story.append(Paragraph("• " + blocks[i][1], normal))
+                i += 1
+    return story
+
+
 def _render_pdf(html: str, vacancies: list[Vacancy], result, pdf_path: Path) -> None:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
@@ -180,9 +278,11 @@ def _render_pdf(html: str, vacancies: list[Vacancy], result, pdf_path: Path) -> 
     sub = ParagraphStyle("sub", fontName="Cyr", fontSize=12, leading=16, spaceBefore=8, spaceAfter=4)
 
     doc = SimpleDocTemplate(str(pdf_path), pagesize=A4, topMargin=18 * mm, bottomMargin=18 * mm)
-    story = [Paragraph("AI-Recruiter — итоговый отчёт", heading)]
+    story: list = [Paragraph("AI-Recruiter — итоговый отчёт", heading)]
 
-    story.append(Paragraph("Метрики ранжирования", sub))
+    story += _blocks_to_pdf(_INTRO_BLOCKS, normal, sub)
+
+    story.append(Paragraph("3. Результаты экспериментов", sub))
     for name, value in (
         ("MRR", result.mrr), ("Hit@1", result.hit_at_1), ("Hit@3", result.hit_at_3),
         ("Hit@5", result.hit_at_5), ("Precision@5", result.precision_at_5),
@@ -198,6 +298,8 @@ def _render_pdf(html: str, vacancies: list[Vacancy], result, pdf_path: Path) -> 
                 normal,
             )
         )
+
+    story += _blocks_to_pdf(_CONCLUSIONS_BLOCKS, normal, sub)
 
     story.append(Spacer(1, 8))
     doc.build(story)

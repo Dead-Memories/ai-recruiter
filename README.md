@@ -18,7 +18,7 @@
 
 ## Стек
 
-Python, sentence-transformers (эмбеддинги), ChromaDB (векторный поиск), Ollama или облачный LLM API (агенты), Pydantic (контракты).
+Python, sentence-transformers (эмбеддинги), ChromaDB (векторный поиск), Ollama или облачный LLM API (агенты), dataclasses + JSON (контракты данных).
 
 ## Структура
 
@@ -30,6 +30,8 @@ Python, sentence-transformers (эмбеддинги), ChromaDB (векторны
 - **Тулы** (`ai_recruiter/tools`) — `semantic_search`, `extract_experience_years`, `check_mandatory_skills`.
 - **Агенты** (`ai_recruiter/agents`) — Технический Скринер и HR-Аналитик.
 - **Отчёт** (`ai_recruiter/report`) — карточка кандидата с вердиктом.
+- **Контракты** (`ai_recruiter/schema.py`) — `Vacancy`, `AgentResult`, `CandidateReport`.
+- **Пайплайн и метрики** (`ai_recruiter/pipeline.py`, `ai_recruiter/evaluation.py`) — сквозной прогон и оценка качества.
 - **Данные** (`ai_recruiter/data`) — воспроизводимый генератор демо-резюме (PDF/DOCX) с фиксированным seed.
 
 ## Статус
@@ -91,3 +93,14 @@ docker build -t ai-recruiter . && docker run -p 8501:8501 ai-recruiter
 Модуль `ai_recruiter/evaluation.py` оценивает ранжирование на ground-truth
 (роль кандидата известна из манифеста): MRR, Hit@1/3/5, Precision@5.
 Сводный отчёт — `python -m ai_recruiter.report.final_report`.
+
+## Итоговый отчёт
+
+Готовый отчёт с постановкой задачи, описанием решения, метриками и выводами —
+в папке `reports/`:
+
+- `reports/final_report.html` — сводный отчёт (открыть в браузере);
+- `reports/final_report.pdf` — PDF-версия;
+- `reports/run_output.md` — транскрипт реального прогона (ранжированная выдача по всем вакансиям).
+
+Перегенерировать: `python -m ai_recruiter.report.final_report`.
